@@ -22,5 +22,16 @@
     "history": [
       "Новая"
     ]
+  },
+  {
+    "id": 3,
+    "employee": "Иванов",
+    "material_id": 4,
+    "quantity": 12,
+    "created": "2026-09-20",
+    "status": "Новая",
+    "history": [
+      "Новая"
+    ]
   }
 ]
