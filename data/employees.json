@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "Иванов И.И.",
+    "email": "ivanov.ii@example.local",
+    "department": "Административный отдел"
+  },
+  {
+    "id": 2,
+    "name": "Петрова А.С.",
+    "email": "petrova.as@example.local",
+    "department": "Отдел снабжения"
+  },
+  {
+    "id": 3,
+    "name": "Иванов",
+    "email": "ivanov@example.local",
+    "department": "Не указано"
+  }
+]
