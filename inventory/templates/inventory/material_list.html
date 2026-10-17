@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Материалы — Сервис расходных материалов{% endblock %}
+
+{% block content %}
+  <div class="section-heading">
+    <div>
+      <h1>Расходные материалы</h1>
+      <p>Справочник материалов и текущие складские остатки</p>
+    </div>
+    <span class="count-label">Позиций: {{ materials|length }}</span>
+  </div>
+  <div class="material-grid">
+    {% for material in materials %}
+      {% include "inventory/includes/material_card.html" with material=material only %}
+    {% empty %}
+      <p class="empty-state">Материалы пока не добавлены.</p>
+    {% endfor %}
+  </div>
+{% endblock %}

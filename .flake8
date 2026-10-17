@@ -1,0 +1,2 @@
+[flake8]
+exclude = .git,.hg,.svn,CVS,.bzr,.tox,.nox,.egg,__pycache__,.pytest_cache,.venv,.venv313,venv,tmp

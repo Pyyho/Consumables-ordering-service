@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Главная — Сервис расходных материалов{% endblock %}
+
+{% block content %}
+  <section class="hero-panel">
+    <p class="section-label">Снабжение организации</p>
+    <h1>Сервис заказа расходных материалов</h1>
+    <p class="lead">Материалы на складе и заявки сотрудников в одном месте.</p>
+    <p>Просматривайте остатки, информацию о материалах и ход обработки заявок на снабжение.</p>
+    <div class="hero-actions">
+      <a href="{% url 'inventory:materials' %}" class="btn btn-primary">Каталог материалов</a>
+      <a href="{% url 'supply_requests:requests' %}" class="btn btn-outline-primary">Заявки на снабжение</a>
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% if supply_request.is_cancelled %}
+  <span class="badge request-status request-status-cancelled">{{ supply_request.status }}</span>
+{% elif supply_request.status == 'Выполнена' %}
+  <span class="badge request-status request-status-completed">{{ supply_request.status }}</span>
+{% elif supply_request.status == 'Отклонена' %}
+  <span class="badge request-status request-status-rejected">{{ supply_request.status }}</span>
+{% elif supply_request.status == 'На согласовании' %}
+  <span class="badge request-status request-status-pending">{{ supply_request.status }}</span>
+{% elif supply_request.status == 'Утверждена' %}
+  <span class="badge request-status request-status-approved">{{ supply_request.status }}</span>
+{% elif supply_request.status == 'В закупке' %}
+  <span class="badge request-status request-status-purchasing">{{ supply_request.status }}</span>
+{% else %}
+  <span class="badge request-status request-status-new">{{ supply_request.status }}</span>
+{% endif %}

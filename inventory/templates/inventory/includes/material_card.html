@@ -1,0 +1,13 @@
+<article class="card material-card">
+  <div class="card-body">
+    <p class="material-reference">Материал №{{ material.id }}</p>
+    <h2 class="card-title h4">{{ material.name|default:"Без названия" }}</h2>
+    <p class="card-text">На складе: <strong>{{ material.stock }} {{ material.unit }}</strong></p>
+    {% if material.stock %}
+      <span class="badge bg-success material-availability">В наличии</span>
+    {% else %}
+      <span class="badge bg-danger material-availability">Нет на складе</span>
+    {% endif %}
+    <a href="{% url 'inventory:material_detail' material.id %}" class="btn btn-outline-primary mt-3">Подробнее</a>
+  </div>
+</article>

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{% if supply_request %}Заявка №{{ supply_request.id }}{% else %}Заявка не найдена{% endif %} — Сервис расходных материалов{% endblock %}
+
+{% block content %}
+  {% if supply_request %}
+    <article class="card detail-card">
+      <div class="card-body">
+        <div class="section-heading">
+          <h1>Заявка №{{ supply_request.id }}</h1>
+          {% include "supply_requests/includes/request_status.html" with supply_request=supply_request only %}
+        </div>
+        <dl class="row mt-4">
+          <dt class="col-sm-4">Сотрудник</dt>
+          <dd class="col-sm-8">{{ supply_request.employee.name }}</dd>
+          <dt class="col-sm-4">Подразделение</dt>
+          <dd class="col-sm-8">{{ supply_request.employee.department }}</dd>
+          <dt class="col-sm-4">Материал</dt>
+          <dd class="col-sm-8"><a href="{% url 'inventory:material_detail' supply_request.material.id %}">{{ supply_request.material.name|default:"Без названия" }}</a></dd>
+          <dt class="col-sm-4">Количество</dt>
+          <dd class="col-sm-8">{{ supply_request.quantity }} {{ supply_request.material.unit }}</dd>
+          <dt class="col-sm-4">Дата создания</dt>
+          <dd class="col-sm-8">{{ supply_request.created|date:"d.m.Y" }}</dd>
+        </dl>
+        <h2 class="h5 mt-4">История статусов</h2>
+        <ol class="status-history">
+          {% for status in supply_request.history %}
+            <li>{{ status }}</li>
+          {% empty %}
+            <li>История пока пуста.</li>
+          {% endfor %}
+        </ol>
+      </div>
+    </article>
+  {% else %}
+    <section class="empty-state" role="alert">
+      <h1 class="text-danger">Заявка не найдена</h1>
+      <p>Заявки с таким номером нет в хранилище.</p>
+    </section>
+  {% endif %}
+  <a href="{% url 'supply_requests:requests' %}" class="btn btn-outline-secondary mt-3">К списку заявок</a>
+{% endblock %}

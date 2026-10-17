@@ -1,4 +1,4 @@
-"""Настройки Django-проекта для ПР5."""
+"""Настройки Django-проекта с шаблонами и статикой ПР6."""
 
 from pathlib import Path
 
@@ -36,7 +36,7 @@ ROOT_URLCONF = "consumables_service.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

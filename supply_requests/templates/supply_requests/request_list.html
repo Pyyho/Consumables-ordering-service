@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Заявки — Сервис расходных материалов{% endblock %}
+
+{% block content %}
+  <div class="section-heading">
+    <div>
+      <h1>Заявки на снабжение</h1>
+      <p>Заказы сотрудников и ход их обработки</p>
+    </div>
+    <span class="count-label">Заявок: {{ supply_requests|length }}</span>
+  </div>
+  <div class="table-responsive requests-table">
+    <table class="table table-hover align-middle mb-0">
+      <caption class="visually-hidden">Заявки сотрудников на расходные материалы</caption>
+      <thead>
+        <tr>
+          <th scope="col">Номер</th>
+          <th scope="col">Сотрудник</th>
+          <th scope="col">Материал</th>
+          <th scope="col">Количество</th>
+          <th scope="col">Дата</th>
+          <th scope="col">Статус</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for supply_request in supply_requests %}
+          <tr>
+            <td><a href="{% url 'supply_requests:request_detail' supply_request.id %}">№{{ supply_request.id }}</a></td>
+            <td>{{ supply_request.employee.name }}</td>
+            <td>{{ supply_request.material.name|default:"Без названия" }}</td>
+            <td>{{ supply_request.quantity }} {{ supply_request.material.unit }}</td>
+            <td class="text-nowrap">{{ supply_request.created|date:"d.m.Y" }}</td>
+            <td>{% include "supply_requests/includes/request_status.html" with supply_request=supply_request only %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="empty-state">Заявки пока не созданы.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

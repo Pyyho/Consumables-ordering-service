@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{% if material %}{{ material.name|default:"Без названия" }}{% else %}Материал не найден{% endif %} — Сервис расходных материалов{% endblock %}
+
+{% block content %}
+  {% if material %}
+    <article class="card material-card detail-card">
+      <div class="card-body">
+        <div class="section-heading">
+          <h1>{{ material.name|default:"Без названия" }}</h1>
+          {% if available %}
+            <span class="badge bg-success material-availability">В наличии</span>
+          {% else %}
+            <span class="badge bg-danger material-availability">Нет на складе</span>
+          {% endif %}
+        </div>
+        <dl class="row mt-4">
+          <dt class="col-sm-4">Идентификатор</dt>
+          <dd class="col-sm-8">{{ material.id }}</dd>
+          <dt class="col-sm-4">Единица измерения</dt>
+          <dd class="col-sm-8">{{ material.unit }}</dd>
+          <dt class="col-sm-4">Остаток</dt>
+          <dd class="col-sm-8">{{ material.stock }}</dd>
+        </dl>
+      </div>
+    </article>
+  {% else %}
+    <section class="empty-state" role="alert">
+      <h1 class="text-danger">Материал не найден</h1>
+      <p>Позиции с таким идентификатором нет в справочнике.</p>
+    </section>
+  {% endif %}
+  <a href="{% url 'inventory:materials' %}" class="btn btn-outline-secondary mt-3">К списку материалов</a>
+{% endblock %}

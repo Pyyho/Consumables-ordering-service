@@ -1,0 +1,14 @@
+{% load static %}
+<header class="service-header">
+  <nav class="container service-navigation" aria-label="Основная навигация">
+    <a class="service-brand" href="{% url 'homepage:index' %}">
+      <img src="{% static 'homepage/img/logo.svg' %}" alt="Сервис расходных материалов" class="service-logo" width="44" height="44">
+      <span>Расходные материалы</span>
+    </a>
+    <div class="service-links">
+      <a href="{% url 'homepage:index' %}"{% if request.resolver_match.namespace == 'homepage' %} class="active" aria-current="page"{% endif %}>Главная</a>
+      <a href="{% url 'inventory:materials' %}"{% if request.resolver_match.namespace == 'inventory' %} class="active"{% endif %}>Материалы</a>
+      <a href="{% url 'supply_requests:requests' %}"{% if request.resolver_match.namespace == 'supply_requests' %} class="active"{% endif %}>Заявки</a>
+    </div>
+  </nav>
+</header>
