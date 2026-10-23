@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Подбор материалов — Сервис расходных материалов{% endblock %}
+
+{% block content %}
+  <h1>Подбор материалов по количеству</h1>
+  <p>Найдите позиции, текущего складского остатка которых достаточно для вашего заказа.</p>
+  <form method="get" class="hero-actions mb-4">
+    <div>
+      <label for="quantity" class="form-label">Требуемое количество</label>
+      <input type="number" name="quantity" id="quantity" min="1" max="2147483647" value="{{ quantity }}" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Найти материалы</button>
+  </form>
+  {% if error %}
+    <p class="alert alert-danger" role="alert">{{ error }}</p>
+  {% elif searched %}
+    <h2 class="h4">Подходящих позиций: {{ materials|length }}</h2>
+    <div class="material-grid">
+      {% for material in materials %}
+        {% include "inventory/includes/material_card.html" with material=material only %}
+      {% empty %}
+        <p class="empty-state">Материалов с таким остатком не найдено.</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+  <a href="{% url 'inventory:materials' %}" class="btn btn-outline-secondary mt-3">К списку материалов</a>
+{% endblock %}

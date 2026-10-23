@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Поиск заявок по дате — Сервис расходных материалов{% endblock %}
+
+{% block content %}
+  <h1>Поиск заявок по дате создания</h1>
+  <form method="get" class="hero-actions mb-4">
+    <div>
+      <label for="date" class="form-label">Дата создания</label>
+      <input type="date" id="date" name="date" value="{{ selected_date }}" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Найти заявки</button>
+  </form>
+  {% if error %}
+    <p class="alert alert-danger" role="alert">{{ error }}</p>
+  {% elif searched %}
+    <h2 class="h4">Найдено заявок: {{ supply_requests|length }}</h2>
+    {% for supply_request in supply_requests %}
+      <article class="card detail-card mb-3">
+        <div class="card-body">
+          <h3 class="h5"><a href="{% url 'supply_requests:request_detail' supply_request.id %}">Заявка №{{ supply_request.id }}</a></h3>
+          <p>{{ supply_request.employee_name }} — {{ supply_request.material_name }}: {{ supply_request.quantity }} {{ supply_request.unit }}</p>
+          <p>Дата: {{ supply_request.created_display }}</p>
+          {% include "supply_requests/includes/request_status.html" with supply_request=supply_request only %}
+        </div>
+      </article>
+    {% empty %}
+      <p class="empty-state">На выбранную дату заявок нет.</p>
+    {% endfor %}
+  {% endif %}
+  <a href="{% url 'supply_requests:requests' %}" class="btn btn-outline-secondary mt-3">К списку заявок</a>
+{% endblock %}

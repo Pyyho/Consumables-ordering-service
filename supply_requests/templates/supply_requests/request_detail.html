@@ -12,20 +12,20 @@
         </div>
         <dl class="row mt-4">
           <dt class="col-sm-4">Сотрудник</dt>
-          <dd class="col-sm-8">{{ supply_request.employee.name }}</dd>
+          <dd class="col-sm-8">{{ supply_request.employee_name }}</dd>
           <dt class="col-sm-4">Подразделение</dt>
-          <dd class="col-sm-8">{{ supply_request.employee.department }}</dd>
+          <dd class="col-sm-8">{{ supply_request.department }}</dd>
           <dt class="col-sm-4">Материал</dt>
-          <dd class="col-sm-8"><a href="{% url 'inventory:material_detail' supply_request.material.id %}">{{ supply_request.material.name|default:"Без названия" }}</a></dd>
+          <dd class="col-sm-8"><a href="{% url 'inventory:material_detail' supply_request.material_id %}">{{ supply_request.material_name|default:"Без названия" }}</a></dd>
           <dt class="col-sm-4">Количество</dt>
-          <dd class="col-sm-8">{{ supply_request.quantity }} {{ supply_request.material.unit }}</dd>
+          <dd class="col-sm-8">{{ supply_request.quantity }} {{ supply_request.unit }}</dd>
           <dt class="col-sm-4">Дата создания</dt>
-          <dd class="col-sm-8">{{ supply_request.created|date:"d.m.Y" }}</dd>
+          <dd class="col-sm-8">{{ supply_request.created_display }}</dd>
         </dl>
         <h2 class="h5 mt-4">История статусов</h2>
         <ol class="status-history">
-          {% for status in supply_request.history %}
-            <li>{{ status }}</li>
+          {% for item in history %}
+            <li>{{ item.status }}</li>
           {% empty %}
             <li>История пока пуста.</li>
           {% endfor %}

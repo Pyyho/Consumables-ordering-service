@@ -1,6 +1,8 @@
-"""Тесты маршрутов, шаблонов и статических ресурсов ПР6."""
+"""Тесты SQL-представлений ПР7 и сохранённых шаблонов ПР6."""
 
 import os
+import sqlite3
+from contextlib import closing
 from types import SimpleNamespace
 
 import django
@@ -11,6 +13,8 @@ from django.test import Client, override_settings
 from django.test.utils import setup_test_environment
 from django.urls import resolve, reverse
 
+from db.database import get_connection
+from db.import_json import import_data
 from models import Employee, Material, SupplyRequest
 from storage import save_employees, save_materials, save_requests
 
@@ -37,8 +41,18 @@ def client(tmp_path):
     save_materials(data_dir / "materials.json", [material])
     save_employees(data_dir / "employees.json", [employee])
     save_requests(data_dir / "requests.json", [supply_request])
-    with override_settings(BASE_DIR=tmp_path):
+    db_path = data_dir / "consumables.sqlite"
+    import_data(data_dir, db_path)
+    with override_settings(BASE_DIR=tmp_path, SUPPLY_DB_PATH=db_path):
         yield Client()
+
+
+def change_database(tmp_path, sql, params=()) -> None:
+    """Изменить изолированную базу вместо рабочих JSON-файлов."""
+    db_path = tmp_path / "data" / "consumables.sqlite"
+    with closing(get_connection(db_path)) as c:
+        with c:
+            c.execute(sql, params)
 
 
 def response_text(response) -> str:
@@ -55,7 +69,7 @@ def test_homepage_contains_navigation(client) -> None:
     assert 'href="/requests/"' in content
 
 
-def test_materials_page_uses_json_data(client) -> None:
+def test_materials_page_uses_sqlite_data(client) -> None:
     response = client.get("/materials/")
     content = response_text(response)
     assert response.status_code == 200
@@ -97,10 +111,7 @@ def test_request_detail_and_missing_request(client) -> None:
 
 @pytest.mark.parametrize("path", ["/materials/", "/materials/1/"])
 def test_zero_stock_is_displayed(client, tmp_path, path) -> None:
-    save_materials(
-        tmp_path / "data" / "materials.json",
-        [Material(1, "Бумага А4", "пачка", 0)],
-    )
+    change_database(tmp_path, "UPDATE materials SET stock = 0 WHERE id = 1")
     response = client.get(path)
     assert response.status_code == 200
     assert "danger" in response_text(response)
@@ -116,7 +127,9 @@ def test_zero_stock_is_displayed(client, tmp_path, path) -> None:
     ],
 )
 def test_empty_lists(client, tmp_path, path, filename, message) -> None:
-    (tmp_path / "data" / filename).write_text("[]", encoding="utf-8")
+    change_database(tmp_path, "DELETE FROM supply_requests")
+    if filename == "materials.json":
+        change_database(tmp_path, "DELETE FROM materials")
     response = client.get(path)
     assert response.status_code == 200
     assert message in response_text(response)
@@ -126,11 +139,9 @@ def test_empty_lists(client, tmp_path, path, filename, message) -> None:
     "path",
     ["/materials/", "/materials/1/", "/requests/", "/requests/1/"],
 )
-def test_json_values_are_escaped(client, tmp_path, path) -> None:
-    save_materials(
-        tmp_path / "data" / "materials.json",
-        [Material(1, '<script>alert("test")</script>', "шт", 25)],
-    )
+def test_database_values_are_escaped(client, tmp_path, path) -> None:
+    change_database(tmp_path, "UPDATE materials SET name = ? WHERE id = 1",
+                    ('<script>alert("test")</script>',))
     response = client.get(path)
     content = response_text(response)
     assert response.status_code == 200
@@ -183,12 +194,12 @@ def test_templates_inheritance_and_context(
     if context_key is not None:
         assert response.context[context_key] is not None
     if context_key == "material":
-        assert isinstance(response.context[context_key], Material)
+        assert isinstance(response.context[context_key], sqlite3.Row)
     if context_key == "supply_request":
         item = response.context[context_key]
-        assert isinstance(item, SupplyRequest)
-        assert isinstance(item.material, Material)
-        assert isinstance(item.employee, Employee)
+        assert isinstance(item, sqlite3.Row)
+        assert item["material_name"] == "Бумага А4"
+        assert item["employee_name"] == "Иванов И.И."
 
 
 @pytest.mark.parametrize(
@@ -214,15 +225,14 @@ def test_missing_objects_are_handled_in_templates(
 ])
 @pytest.mark.parametrize("path", ["/requests/", "/requests/1/"])
 def test_shared_status_template(client, tmp_path, status, path) -> None:
-    material = Material(1, "Бумага А4", "пачка", 25)
-    employee = Employee(1, "Иванов", "ivanov@example.local", "Снабжение")
-    item = SupplyRequest(1, employee, material, 2, "2026-09-20", status)
-    save_requests(tmp_path / "data" / "requests.json", [item])
+    change_database(tmp_path,
+                    "UPDATE supply_requests SET status = ? WHERE id = 1",
+                    (status,))
     response = client.get(path)
     names = {template.name for template in response.templates}
     assert "supply_requests/includes/request_status.html" in names
     assert status in response_text(response)
-    if item.is_cancelled:
+    if status == "Отменена":
         assert "request-status-cancelled" in response_text(response)
 
 
@@ -253,3 +263,60 @@ def test_static_resources_are_found_and_linked(client, asset) -> None:
 @pytest.mark.parametrize("path", ["/materials/text/", "/requests/text/"])
 def test_text_is_not_accepted_by_int_routes(client, path) -> None:
     assert client.get(path).status_code == 404
+
+
+def test_pages_use_database_not_later_json_changes(client, tmp_path) -> None:
+    save_materials(tmp_path / "data" / "materials.json",
+                   [Material(1, "Только в JSON", "шт", 1)])
+    change_database(tmp_path, "UPDATE materials SET name = ? WHERE id = 1",
+                    ("Название из SQLite",))
+    for path in ("/materials/", "/materials/1/", "/requests/", "/requests/1/"):
+        content = response_text(client.get(path))
+        assert "Название из SQLite" in content
+        assert "Только в JSON" not in content
+
+
+@pytest.mark.parametrize("quantity", ["0", "-1", "abc", "1 OR 1=1", "9" * 30])
+def test_material_search_rejects_invalid_quantity(client, quantity) -> None:
+    response = client.get("/materials/available/", {"quantity": quantity})
+    assert response.status_code == 400
+
+
+def test_available_materials_get_search(client) -> None:
+    assert client.get("/materials/available/").context["searched"] is False
+    found = client.get("/materials/available/", {"quantity": "25"})
+    assert [row["id"] for row in found.context["materials"]] == [1]
+    missing = client.get("/materials/available/", {"quantity": "26"})
+    assert len(missing.context["materials"]) == 0
+
+
+def test_requests_by_date(client) -> None:
+    found = client.get("/requests/search/", {"date": "2026-09-20"})
+    assert [row["id"] for row in found.context["supply_requests"]] == [1]
+    empty = client.get("/requests/search/", {"date": "2026-09-21"})
+    assert "На выбранную дату заявок нет" in response_text(empty)
+    for value in ("2026-02-30", "20260920", "' OR 1=1 --"):
+        response = client.get("/requests/search/", {"date": value})
+        assert response.status_code == 400
+
+
+def test_active_requests_and_employees(client, tmp_path) -> None:
+    assert len(client.get("/requests/active/").context["supply_requests"]) == 1
+    change_database(tmp_path,
+                    "UPDATE supply_requests SET status = 'Отменена'")
+    assert len(client.get("/requests/active/").context["supply_requests"]) == 0
+    assert len(client.get("/requests/").context["supply_requests"]) == 1
+    assert "Иванов И.И." in response_text(client.get("/requests/employees/"))
+
+
+def test_statistics_keep_zero_request_material(client, tmp_path) -> None:
+    change_database(tmp_path,
+                    "INSERT INTO materials VALUES (2, 'Маркер', 'шт', 0)")
+    response = client.get("/requests/statistics/")
+    assert response.status_code == 200
+    assert response.context["material_summary"]["total"] == 2
+    assert response.context["request_summary"]["active"] == 1
+    rows = {row["id"]: row for row in response.context["material_statistics"]}
+    assert rows[2]["requests_count"] == 0
+    assert rows[2]["requested_quantity"] == 0
+    assert "Маркер" in response_text(response)

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Сотрудники — Сервис расходных материалов{% endblock %}
+
+{% block content %}
+  <h1>Сотрудники</h1>
+  <p>Сотрудников: {{ employees|length }}</p>
+  <div class="material-grid">
+    {% for employee in employees %}
+      <article class="card detail-card">
+        <div class="card-body">
+          <h2 class="h5">{{ employee.name }}</h2>
+          <p>{{ employee.department }}</p>
+          <p>{{ employee.email }}</p>
+        </div>
+      </article>
+    {% empty %}
+      <p class="empty-state">Сотрудники пока не добавлены.</p>
+    {% endfor %}
+  </div>
+  <a href="{% url 'supply_requests:requests' %}" class="btn btn-outline-secondary mt-3">К списку заявок</a>
+{% endblock %}

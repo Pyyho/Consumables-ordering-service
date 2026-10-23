@@ -1,9 +1,10 @@
-"""Настройки Django-проекта с шаблонами и статикой ПР6."""
+"""Настройки шаблонов ПР6 и отдельного SQLite-хранилища ПР7."""
 
 from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+SUPPLY_DB_PATH = BASE_DIR / "data" / "consumables.sqlite"
 
 SECRET_KEY = "pr5-local-development-key"
 DEBUG = True

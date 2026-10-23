@@ -9,6 +9,7 @@ app_name = "inventory"
 
 urlpatterns = [
     path("", views.materials, name="materials"),
+    path("available/", views.available_materials, name="available"),
     path(
         "<int:material_id>/",
         views.material_detail,

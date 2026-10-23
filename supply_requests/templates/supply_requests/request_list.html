@@ -5,10 +5,16 @@
 {% block content %}
   <div class="section-heading">
     <div>
-      <h1>Заявки на снабжение</h1>
+      <h1>{% if active_only %}Активные заявки{% else %}Заявки на снабжение{% endif %}</h1>
       <p>Заказы сотрудников и ход их обработки</p>
     </div>
     <span class="count-label">Заявок: {{ supply_requests|length }}</span>
+  </div>
+  <div class="hero-actions mb-3">
+    <a href="{% url 'supply_requests:requests' %}" class="btn btn-outline-primary">Все заявки</a>
+    <a href="{% url 'supply_requests:active' %}" class="btn btn-outline-primary">Активные заявки</a>
+    <a href="{% url 'supply_requests:search' %}" class="btn btn-outline-primary">Поиск по дате</a>
+    <a href="{% url 'supply_requests:employees' %}" class="btn btn-outline-primary">Сотрудники</a>
   </div>
   <div class="table-responsive requests-table">
     <table class="table table-hover align-middle mb-0">
@@ -27,10 +33,10 @@
         {% for supply_request in supply_requests %}
           <tr>
             <td><a href="{% url 'supply_requests:request_detail' supply_request.id %}">№{{ supply_request.id }}</a></td>
-            <td>{{ supply_request.employee.name }}</td>
-            <td>{{ supply_request.material.name|default:"Без названия" }}</td>
-            <td>{{ supply_request.quantity }} {{ supply_request.material.unit }}</td>
-            <td class="text-nowrap">{{ supply_request.created|date:"d.m.Y" }}</td>
+            <td>{{ supply_request.employee_name }}</td>
+            <td>{{ supply_request.material_name|default:"Без названия" }}</td>
+            <td>{{ supply_request.quantity }} {{ supply_request.unit }}</td>
+            <td class="text-nowrap">{{ supply_request.created_display }}</td>
             <td>{% include "supply_requests/includes/request_status.html" with supply_request=supply_request only %}</td>
           </tr>
         {% empty %}

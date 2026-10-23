@@ -10,6 +10,7 @@
     </div>
     <span class="count-label">Позиций: {{ materials|length }}</span>
   </div>
+  <p><a href="{% url 'inventory:available' %}" class="btn btn-outline-primary">Подобрать материалы по количеству</a></p>
   <div class="material-grid">
     {% for material in materials %}
       {% include "inventory/includes/material_card.html" with material=material only %}

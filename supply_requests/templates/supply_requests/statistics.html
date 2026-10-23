@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика снабжения — Сервис расходных материалов{% endblock %}
+
+{% block content %}
+  <h1>Статистика снабжения</h1>
+  <div class="material-grid mb-4">
+    <article class="card detail-card"><div class="card-body">
+      <h2 class="h5">Склад</h2>
+      <p>Позиций: {{ material_summary.total }}; в наличии: {{ material_summary.in_stock }}</p>
+    </div></article>
+    <article class="card detail-card"><div class="card-body">
+      <h2 class="h5">Заявки</h2>
+      <p>Всего: {{ request_summary.total }}; активных: {{ request_summary.active }}; выполненных: {{ request_summary.completed }}</p>
+    </div></article>
+  </div>
+
+  <h2 class="h4">Спрос по материалам</h2>
+  <p>Учитываются заявки, которые ещё обрабатываются.</p>
+  <div class="table-responsive requests-table mb-4">
+    <table class="table mb-0">
+      <thead><tr><th scope="col">Материал</th><th scope="col">Активных заявок</th><th scope="col">Запрошено</th><th scope="col">Остаток</th></tr></thead>
+      <tbody>
+        {% for item in material_statistics %}
+          <tr>
+            <td><a href="{% url 'inventory:material_detail' item.id %}">{{ item.name }}</a></td>
+            <td>{{ item.requests_count }}</td>
+            <td>{{ item.requested_quantity }} {{ item.unit }}</td>
+            <td>{{ item.stock }} {{ item.unit }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">Материалов пока нет.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="h4">Заявки по сотрудникам</h2>
+  <div class="table-responsive requests-table mb-4">
+    <table class="table mb-0">
+      <thead><tr><th scope="col">Сотрудник</th><th scope="col">Подразделение</th><th scope="col">Активных заявок</th></tr></thead>
+      <tbody>
+        {% for item in employee_statistics %}
+          <tr><td>{{ item.name }}</td><td>{{ item.department }}</td><td>{{ item.requests_count }}</td></tr>
+        {% empty %}
+          <tr><td colspan="3">Сотрудников пока нет.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="material-grid mb-4">
+    <section class="card detail-card"><div class="card-body">
+      <h2 class="h5">Повышенный спрос</h2>
+      <p>Материалы с более чем одной активной заявкой</p>
+      <ul>
+        {% for item in popular_materials %}
+          <li>{{ item.name }} — {{ item.requests_count }}</li>
+        {% empty %}
+          <li>Таких материалов пока нет.</li>
+        {% endfor %}
+      </ul>
+    </div></section>
+    <section class="card detail-card"><div class="card-body">
+      <h2 class="h5">Подразделения с активными заявками</h2>
+      <ul>
+        {% for item in departments %}
+          <li>{{ item.department }} — {{ item.requests_count }}</li>
+        {% empty %}
+          <li>Активных заявок пока нет.</li>
+        {% endfor %}
+      </ul>
+    </div></section>
+  </div>
+
+  <h2 class="h4">Последние пять заявок</h2>
+  <ul class="list-group mb-4">
+    {% for item in recent_requests %}
+      <li class="list-group-item">
+        <a href="{% url 'supply_requests:request_detail' item.id %}">№{{ item.id }}</a>
+        — {{ item.employee_name }}, {{ item.material_name }}, {{ item.created }}, {{ item.status }}
+      </li>
+    {% empty %}
+      <li class="list-group-item">Заявок пока нет.</li>
+    {% endfor %}
+  </ul>
+
+  <h2 class="h4">Материалы без активных заявок</h2>
+  <ul>
+    {% for item in without_active %}
+      <li><a href="{% url 'inventory:material_detail' item.id %}">{{ item.name }}</a></li>
+    {% empty %}
+      <li>По каждому материалу есть активные заявки либо справочник пуст.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
