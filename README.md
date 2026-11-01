@@ -1,420 +1,226 @@
 # Сервис заказа расходных материалов
 
-Приложение для ведения справочника расходных материалов и обработки заявок
-сотрудников организации. Консольная версия на объектной модели ПР3 сохранена,
-в ПР5 добавлен веб-интерфейс на Django 5.2, а в ПР6 все пять страниц переведены
-на Django Template Language (DTL). В ПР7 веб-часть получает данные из отдельной
-базы SQLite через стандартную библиотеку `sqlite3`, без Django ORM.
+Индивидуальный проект: каталог складских материалов, сотрудники и заявки
+на снабжение. В ПР9 веб-приложение переведено с SQL-запросов ПР7 на Django ORM.
+Шаблоны ПР6, адреса страниц и прежние сценарии сохранены.
 
-## Возможности
+## Запуск
 
-В веб-интерфейсе ПР7 реализованы:
+Команды выполняются из корня проекта в терминале VS Code или PyCharm.
+Для Windows PowerShell:
 
-- главная страница с навигацией;
-- список расходных материалов из SQLite;
-- страница отдельного материала по числовому идентификатору;
-- отображение складского остатка и статуса наличия;
-- список всех и активных заявок из SQLite;
-- страница отдельной заявки со связанными сотрудником и материалом;
-- отображение статуса и истории статусов заявки;
-- подбор материалов по требуемому количеству;
-- поиск заявок по дате создания;
-- справочник сотрудников и статистика снабжения;
-- ответ с кодом 404 для несуществующего материала или заявки.
-
-Консольная версия по-прежнему поддерживает создание, изменение, поиск и удаление
-материалов, работу с сотрудниками, создание заявок, изменение статусов и сохранение
-данных в JSON.
-
-## Используемые технологии
-
-- Python 3;
-- Django 5.2;
-- Django Template Language (DTL);
-- HTML и CSS;
-- JavaScript;
-- Bootstrap 5.3 через CDN;
-- SQLite и стандартная библиотека Python `sqlite3`;
-- JSON как источник первоначального импорта и хранилище консольной версии;
-- pytest для автоматизированных тестов;
-- flake8 для проверки стиля кода.
-
-## Предметная область
-
-Основные сущности проекта:
-
-- `Material` — расходный материал с единицей измерения и складским остатком;
-- `Employee` — сотрудник организации, создающий заявку;
-- `SupplyRequest` — заявка, которая связывает сотрудника и материал.
-
-Эти классы сохранены для консольной версии и проверки данных при импорте.
-В ПР7 веб-представления получают именованные строки `sqlite3.Row` из SQL-запросов,
-передают их через контекст в шаблоны и вызывают `render()`. Django ORM пока
-не используется. Веб-часть только читает SQLite, а консольная версия работает
-с JSON. Изменения JSON после импорта автоматически в SQLite не попадают.
-
-## Страницы веб-интерфейса
-
-| URL | View-функция | Назначение |
-| --- | --- | --- |
-| `/` | `homepage.views.index()` | описание сервиса и навигация |
-| `/materials/` | `inventory.views.materials()` | список материалов |
-| `/materials/<int:material_id>/` | `inventory.views.material_detail()` | карточка материала |
-| `/materials/available/?quantity=5` | `inventory.views.available_materials()` | подбор по складскому остатку |
-| `/requests/` | `supply_requests.views.requests()` | список заявок |
-| `/requests/<int:request_id>/` | `supply_requests.views.request_detail()` | карточка заявки |
-| `/requests/active/` | `supply_requests.views.active_requests()` | незавершённые заявки |
-| `/requests/search/?date=2026-09-20` | `supply_requests.views.requests_by_date()` | поиск по дате создания |
-| `/requests/employees/` | `supply_requests.views.employees()` | сотрудники |
-| `/requests/statistics/` | `supply_requests.views.statistics()` | статистика снабжения |
-
-Маршруты распределены по приложениям и подключены через `include()` в
-`consumables_service/urls.py`. Динамические адреса используют конвертер `int`.
-
-## Структура проекта
-
-```text
-Consumables-ordering-service/
-├── manage.py
-├── main.py
-├── storage.py
-├── utils.py
-├── requirements.txt
-├── db/
-│   ├── database.py
-│   ├── import_json.py
-│   ├── queries.py
-│   └── check_queries.py
-├── sql/
-│   ├── schema.sql
-│   └── queries.sql
-├── consumables_service/
-│   ├── settings.py
-│   ├── urls.py
-│   ├── asgi.py
-│   └── wsgi.py
-├── homepage/
-│   ├── templates/homepage/index.html
-│   ├── static/homepage/
-│   │   ├── css/style.css
-│   │   ├── js/main.js
-│   │   └── img/logo.svg
-│   ├── urls.py
-│   └── views.py
-├── inventory/
-│   ├── templates/inventory/
-│   │   ├── material_list.html
-│   │   ├── material_detail.html
-│   │   ├── available.html
-│   │   └── includes/material_card.html
-│   ├── urls.py
-│   └── views.py
-├── supply_requests/
-│   ├── templates/supply_requests/
-│   │   ├── request_list.html
-│   │   ├── request_detail.html
-│   │   ├── search.html
-│   │   ├── statistics.html
-│   │   ├── employees.html
-│   │   └── includes/request_status.html
-│   ├── urls.py
-│   └── views.py
-├── templates/
-│   ├── base.html
-│   └── includes/navigation.html
-├── models/
-│   ├── materials.py
-│   ├── requests.py
-│   └── users.py
-├── data/
-│   ├── materials.json
-│   ├── employees.json
-│   ├── requests.json
-│   └── consumables.sqlite
-└── tests/
-    ├── test_materials.py
-    ├── test_requests.py
-    ├── test_storage.py
-    ├── test_database.py
-    ├── test_users.py
-    └── test_web.py
+```powershell
+py -3.13 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe manage.py migrate
+.\.venv\Scripts\python.exe manage.py import_pr7
+.\.venv\Scripts\python.exe manage.py runserver
 ```
 
-`consumables_service/` содержит настройки Django и маршрутизацию верхнего уровня.
-Приложение `homepage` отвечает за главную страницу и общие статические ресурсы,
-`inventory` — за материалы, `supply_requests` — за заявки. Пакет `models/` и
-JSON-хранилище относятся к объектной модели ПР3 и используются консолью
-и импортом. Веб-данные выбираются SQL-запросами из `data/consumables.sqlite`.
+Если `.venv` уже существует, используйте его интерпретатор; создавать окружение
+повторно не нужно. Python 3.12 также поддерживается. Откройте
+<http://127.0.0.1:8000/>. Сервер останавливается сочетанием `Ctrl+C`.
+В IDE выберите `.venv\Scripts\python.exe` как интерпретатор проекта.
 
-## Шаблоны Django и контекст
+## Данные и перенос из ПР7
 
-Общая HTML-структура находится в `templates/base.html`: метатеги, Bootstrap,
-собственный CSS, навигация, основной контейнер, подвал и JavaScript. Все
-дочерних страниц используют `{% extends "base.html" %}` и переопределяют
-`{% block title %}` и `{% block content %}`. В `settings.py` указано
-`TEMPLATES[0]["DIRS"] = [BASE_DIR / "templates"]`; `APP_DIRS` включён.
-
-Повторяющиеся фрагменты подключаются через `{% include %}`:
-
-- `includes/navigation.html` — навигация на всех страницах;
-- `inventory/includes/material_card.html` — карточка материала в списке;
-- `supply_requests/includes/request_status.html` — общий статус в списке и карточке заявки.
-
-Контекст списка материалов содержит `materials`, карточки — `material` и
-`available`. Для заявок используются `supply_requests` и `supply_request`.
-Значения — строки `sqlite3.Row` с доступом по именам полей.
-В шаблонах данные выводятся через `{{ material.name }}` и
-`{{ supply_request.employee_name }}`. Связанные названия получены через JOIN.
-Автоматическое экранирование DTL включено. История заявки передаётся отдельно
-в `history` из таблицы `request_history`.
-
-Коллекции перебираются через `{% for %}` с веткой `{% empty %}`. Конструкции
-`{% if %}` обрабатывают отсутствие объекта, наличие материала и статусы заявок.
-Если объект не найден, view передаёт `None` в тот же шаблон деталей и задаёт
-`status=404`, а сообщение пользователю выбирает шаблон.
-
-Фильтры `length` показывают число материалов и заявок, `default:"Без названия"`
-задаёт резервную подпись. В ПР7 дата хранится как ISO-текст, а поле
-`created_display` форматируется запросом через `strftime('%d.%m.%Y', created)`.
-Остаток для подбора проверяется условием `WHERE stock >= :quantity`.
-
-Ссылки формируются тегом `{% url %}` с существующими пространствами имён:
-`homepage:index`, `inventory:materials`, `inventory:material_detail`,
-`supply_requests:requests`, `supply_requests:request_detail`.
-
-## Статические файлы
-
-Ресурсы размещены в `homepage/static/homepage/`:
-
-- `css/style.css` — оформление шапки, карточек материалов, статусов и таблицы;
-- `img/logo.svg` — логотип коробки расходных материалов;
-- `js/main.js` — установка текущего года в подвале страницы.
-
-Используются `{% load static %}` и `{% static %}`. Логотип подключён в общей
-навигации, CSS и JavaScript — в базовом шаблоне. Год также выводится серверным
-тегом `{% now "Y" %}` на случай отключённого JavaScript.
-
-Проверка поиска ресурсов:
-
-```bash
-python manage.py findstatic homepage/css/style.css homepage/js/main.js homepage/img/logo.svg
-```
-
-## Установка
-
-Для Django 5.2 используйте Python 3.10 или новее (для учебной работы
-рекомендуется Python 3.11–3.13). Откройте терминал в корне проекта.
-
-Создайте и активируйте виртуальное окружение, затем установите зависимости:
-
-```bash
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
-
-Проверить установленную версию Django:
-
-```bash
-python -m django --version
-```
-
-## Запуск веб-версии
-
-В поставке есть база с импортированными данными. Если её нет, создайте схему
-и импортируйте исходные JSON (команда импорта создаёт схему автоматически):
-
-```bash
-python -m db.database
-python -m db.import_json
-```
-
-Импорт в непустую базу остановится без перезаписи данных. Явная замена
-предметных таблиц из JSON выполняется только при необходимости:
-
-```bash
-python -m db.import_json --replace
-```
-
-Замена затрагивает только `data/consumables.sqlite`. При ошибке транзакция
-откатывается целиком. JSON и служебная база Django не изменяются.
-Перед первым запуском также примените встроенные миграции Django:
-
-```bash
-python manage.py migrate
-python manage.py check
-python manage.py runserver
-```
-
-После запуска откройте `http://127.0.0.1:8000/`.
-
-## Запуск консольной версии
-
-```bash
-python main.py
-```
-
-## Тестирование и проверка кода
-
-```bash
-pytest -v
-flake8 .
-```
-
-Тесты проверяют объектную модель ПР3, JSON-загрузку и сохранение, маршруты Django,
-данные на HTML-страницах, связи объектов и ответы 404, наследование шаблонов,
-контекст, включаемые фрагменты, все семь статусов и поиск статических файлов.
-SQL-тесты проверяют внешние ключи, ограничения, JOIN, агрегаты, группировки,
-HAVING, подзапросы, историю и атомарный откат импорта. Веб-тесты создают
-собственные JSON и SQLite во временном каталоге: рабочая база не используется.
-Файл `.flake8` исключает виртуальные
-окружения и временные файлы из проверки.
-
-## Перенос сценариев ПР3 в ПР5
-
-| Сценарий ПР3 | Реализация на этапе ПР5 |
+| Назначение | Файл |
 | --- | --- |
-| Просмотр материалов | список `/materials/` |
-| Поиск материала по ID | `get_material()` в карточке материала |
-| Проверка остатка | `Material.has_stock(1)` для статуса наличия |
-| Просмотр заявок | список `/requests/` |
-| Поиск заявки по ID | `get_request()` в карточке заявки |
-| Просмотр связей и истории | сотрудник, материал и статусы в карточке заявки |
-| Поиск, фильтрация, сортировка | доступны в консоли, веб-формы добавятся позднее |
-| Создание, изменение, удаление | доступны в консоли, веб-формы добавятся позднее |
+| Рабочая база Django, включая предметные модели ПР9 | `db.sqlite3` |
+| Исходная предметная база ПР7 | `data/consumables.sqlite` |
+| Автоматические резервные копии | `data/backups/` |
+| Исходные данные консольной версии | `data/*.json` |
+| Переносимый снимок предметных данных ПР9 | `fixtures/pr9_initial.json` |
 
-Заявка связывает `Employee` и `Material` через атрибуты `employee` и `material`.
-`storage.py` восстанавливает эти ссылки из `employee_id` и `material_id`.
-Собственные `models.py` Django-приложений остаются без ORM-моделей.
-`db.sqlite3` содержит только служебные таблицы Django, а не материалы и заявки.
-В ПР6 функция `page()` и генерация HTML-строк из views удалены. Общая структура
-вынесена в `base.html`, ссылки строятся в шаблонах с помощью `{% url %}`.
+`DATABASES` указывает на `db.sqlite3`. Таблицы моделей создаёт `migrate`.
+Команда `import_pr7` открывает источник только для чтения, проверяет целостность
+и внешние ключи, делает резервную копию и переносит данные через ORM в одной
+транзакции. Сохраняются идентификаторы материалов, сотрудников и заявок,
+внешние ключи, даты, статусы и порядок истории. У событий истории источник
+имеет составной ключ `(request_id, position)`; Django добавляет собственный ID.
 
-Для самопроверки откройте все пять URL из таблицы выше, затем
-`/materials/999/` и `/requests/999/`: они должны вернуть 404. При нулевом
-остатке карточка показывает «Нет на складе»; пустые списки выводят пояснение.
-Стили Bootstrap загружаются через CDN, для полного оформления нужен интернет.
+Повторный импорт обновляет записи с теми же ключами через `update_or_create()`;
+дубликаты не появляются, дополнительные записи в Django не удаляются.
+Учитывайте, что повторный импорт перезапишет изменения совпадающих записей
+данными источника. Изменение исходной SQLite или JSON само по себе сайт
+не обновляет. При ошибке перенос целиком откатывается.
 
-## Фиксация результата в Git
-
-На начало ПР7 `main` содержит ПР6, коммит `38f1426` (`Final PR6`).
-Изменения ПР7 оставлены в рабочем дереве, чтобы вы сохранили их в новой ветке.
-Из корня проекта выполните команды по порядку:
-
-```bash
-git status
-git switch -c codex/pr7-sql
-git diff
-git add .
-git commit -m "PR7: add SQLite database and SQL queries"
-git push -u origin codex/pr7-sql
+```powershell
+.\.venv\Scripts\python.exe db/inspect_source_db.py
+.\.venv\Scripts\python.exe manage.py import_pr7 --source data/consumables.sqlite
+# Альтернативный запуск того же переноса:
+.\.venv\Scripts\python.exe -m db.import_sqlite_to_orm
 ```
 
-Создание ветки перенесёт в неё незакоммиченные изменения. Сначала завершите
-коммит в новой ветке; затем для защиты переключайтесь:
+Инспектор показывает таблицы, столбцы, количество строк и внешние ключи.
+Исходный набор: 4 материала, 3 сотрудника, 3 заявки и 5 событий истории.
+Если база ПР7 отсутствует, её можно создать из сохранённых JSON:
 
-```bash
-git switch main
-python manage.py runserver
+```powershell
+.\.venv\Scripts\python.exe -m db.import_json
 ```
 
-После показа ПР6 остановите сервер (`Ctrl+C`), затем:
+Это отдельная операция подготовки источника; обычному запуску сайта она
+не нужна. Рабочая база и резервные копии исключены из Git.
 
-```bash
-git switch codex/pr7-sql
-python manage.py runserver
+## Модели ПР9
+
+| Приложение и модель | Поля и связи |
+| --- | --- |
+| `inventory.Material` | название, единица измерения, неотрицательный остаток |
+| `staff.Employee` | имя, уникальный email без учёта регистра, подразделение |
+| `supply_requests.SupplyRequest` | материал, сотрудник, положительное количество, дата, статус |
+| `supply_requests.RequestHistory` | заявка, порядковый номер события, статус |
+
+Материал и сотрудник связаны с заявками отношениями «один ко многим».
+`ForeignKey(..., on_delete=PROTECT)` защищает используемые справочники от
+удаления. История относится к заявке через `CASCADE` и удаляется вместе с ней.
+Пара `(request, position)` уникальна. Определены `__str__`, русские названия
+и порядок сортировки `Meta`; обязательные ограничения проверяются также в БД.
+Все четыре модели зарегистрированы в Django Admin.
+
+Статусы: «Новая», «На согласовании», «Утверждена», «В закупке», «Выполнена»,
+«Отклонена», «Отменена». Последние три считаются завершёнными.
+Создание заявки проверяет остаток, но не списывает и не резервирует материалы,
+как в прежней реализации. Методы `create_for()`, `change_status()` и `cancel()`
+сохраняют изменения и историю атомарно. Повторная отмена не дублирует событие.
+
+## Страницы и запросы
+
+| URL | Назначение |
+| --- | --- |
+| `/` | главная страница и навигация |
+| `/materials/` | каталог материалов |
+| `/materials/<id>/` | карточка материала |
+| `/materials/available/?quantity=5` | подбор по складскому остатку |
+| `/requests/` | все заявки, фильтры, сортировка, страницы |
+| `/requests/active/` | активные заявки с теми же фильтрами |
+| `/requests/<id>/` | карточка заявки, связанные объекты и история |
+| `/requests/search/?date=2026-09-20` | поиск по дате создания |
+| `/requests/employees/` | справочник сотрудников |
+| `/requests/statistics/` | статистика снабжения |
+
+Список заявок принимает GET-параметры `date`, `material`, `employee`, `status`,
+`q`, `sort`, `page`. Текстовый поиск `q` проверяет название материала, имя,
+email и подразделение сотрудника. Фильтры применяются одновременно.
+Пример: `/requests/?material=1&status=Новая&sort=newest`.
+
+Допустимые сортировки: `date`, `newest`, `material`, `employee`, `status`.
+Остальные значения возвращают стандартную сортировку по дате и ID.
+`Paginator` выводит по 5 заявок; ссылки через `{% querystring %}` сохраняют
+все фильтры. Для исходных трёх заявок страница одна. Некорректный номер
+страницы обрабатывает `get_page()`: текст даёт первую, выход за границы —
+последнюю. Ошибочные даты, ID фильтров, статусы и количество дают понятное
+сообщение и HTTP 400; отсутствующая карточка — HTTP 404.
+
+Веб-представления используют только ORM. Для связей заявок применяется
+`select_related("material", "employee")`, чтобы не выполнять запрос на каждую
+строку. Статистика использует `aggregate()`, `annotate()`, `Count`, `Sum`,
+`Avg`, `Min`, `Max`, условные подсчёты, группировку по подразделениям,
+`values_list()` и `exclude()` для материалов без активных заявок. Последние
+заявки выбираются срезом `[:5]`. Спрос считается отдельно для каждого материала,
+без сложения разных единиц измерения; нулевые группы сохраняются.
+
+## CRUD и другие операции через Django shell
+
+Веб-формы изменения данных в ПР9 не требуются. Для демонстрации ORM:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py shell
 ```
 
-`git merge` для раздельной защиты не нужен. Отправка ветки на GitHub
-не объединяет её с `main`. Дождитесь чистого `git status` перед переключением.
+```python
+from datetime import date
+from django.db.models import F, Q, Count, Sum
+from inventory.models import Material
+from staff.models import Employee
+from supply_requests.models import SupplyRequest
 
-## Текущее состояние
+# CREATE: отдельные демонстрационные записи.
+m = Material.objects.create(name="Папка демонстрационная", unit="шт.", stock=20)
+e = Employee.objects.create(
+    name="Демонстрационный сотрудник",
+    email="orm-demo@example.com", department="Снабжение",
+)
+r = SupplyRequest.create_for(e, m, 2, created=date.today())
 
-ПР7: веб-слой читает SQLite через `sqlite3`, сохраняет шаблоны ПР6 и содержит
-17 именованных SQL-запросов. В следующих работах планируются Django ORM,
-формы изменения объектов, авторизация и REST API.
+# READ / фильтры / объединение условий / сортировка / связанные данные.
+Material.objects.get(pk=m.pk)
+Material.objects.filter(stock__gte=5).order_by("name")
+SupplyRequest.objects.select_related("material", "employee").filter(
+    Q(material__name__icontains="папка") | Q(employee__department="Снабжение")
+)
+SupplyRequest.objects.active().exclude(employee=e)
+SupplyRequest.objects.order_by("-created", "-pk")[:5]
+SupplyRequest.objects.values_list("material_id", flat=True)
+SupplyRequest.objects.values("material_id").annotate(total=Sum("quantity"))
+Material.objects.aggregate(total=Count("id"))
 
-## База данных ПР7
+# UPDATE: выражение F и сохранение изменения статуса вместе с историей.
+Material.objects.filter(pk=m.pk).update(stock=F("stock") + 3)
+m.refresh_from_db()
+r.change_status("Утверждена")
+r.cancel()
+list(r.status_events.values_list("status", flat=True))
 
-Предметная база — `data/consumables.sqlite`. Её не следует путать с
-`db.sqlite3`, где остаются только служебные таблицы Django.
-
-| Таблица | Поля и типы | Ключи |
-| --- | --- | --- |
-| `materials` | `id INTEGER`, `name TEXT`, `unit TEXT`, `stock INTEGER` | PK `id` |
-| `employees` | `id INTEGER`, `name TEXT`, `email TEXT`, `department TEXT` | PK `id`, UNIQUE `email` |
-| `supply_requests` | `id INTEGER`, `material_id INTEGER`, `employee_id INTEGER`, `quantity INTEGER`, `created TEXT`, `status TEXT` | PK `id`, FK на материал и сотрудника |
-| `request_history` | `request_id INTEGER`, `position INTEGER`, `status TEXT` | составной PK `(request_id, position)`, FK на заявку |
-
-Остаток неотрицательный, количество положительное, основные поля обязательны,
-статус ограничен семью значениями. Дата хранится в ISO-формате `YYYY-MM-DD`.
-История вынесена в отдельную таблицу, чтобы не терять её при импорте.
-Внешние ключи включаются в каждом соединении (`PRAGMA foreign_keys = ON`),
-`row_factory = sqlite3.Row` даёт доступ к столбцам по именам.
-
-Схема: `sql/schema.sql`. Импорт: `db/import_json.py`, где данные проверяются
-существующими классами, вставляются через `executemany()` с параметрами `?`,
-а ошибка откатывает транзакцию. Читающие соединения закрываются через
-`contextlib.closing`. Веб-слой открывает SQLite в режиме чтения, поэтому не
-создаёт пустую базу по ошибочному пути и не изменяет данные при GET-запросах.
-
-### Запросы и страницы
-
-`sql/queries.sql` — единый источник запросов, которые читает `db/queries.py`.
-Каждый блок имеет комментарий `-- name: ...`. Пользовательские значения
-передаются отдельно (`:quantity`, `:created`, `:id`) без строковой подстановки.
-
-| № | Имя запроса | Назначение и использование |
-| --- | --- | --- |
-| 1 | `materials_list` | SELECT и сортировка: каталог |
-| 2 | `employees_list` | SELECT и сортировка: сотрудники |
-| 3 | `materials_available` | WHERE: подбор по количеству |
-| 4 | `material_detail` | WHERE: карточка материала |
-| 5 | `requests_all` | JOIN трёх таблиц: все заявки |
-| 6 | `requests_active` | JOIN + WHERE: активные заявки |
-| 7 | `requests_on_date` | JOIN + WHERE: поиск по дате |
-| 8 | `request_detail` | JOIN + WHERE: карточка заявки |
-| 9 | `request_history` | WHERE + ORDER BY: история заявки |
-| 10 | `material_summary` | COUNT: сводка склада |
-| 11 | `request_summary` | COUNT: сводка заявок |
-| 12 | `material_statistics` | LEFT JOIN, SUM, GROUP BY: спрос по материалам |
-| 13 | `employee_statistics` | LEFT JOIN, COUNT, GROUP BY: заявки сотрудников |
-| 14 | `popular_materials` | GROUP BY + HAVING: повышенный спрос |
-| 15 | `department_statistics` | GROUP BY + HAVING: активные подразделения |
-| 16 | `recent_requests` | JOIN, ORDER BY, LIMIT, OFFSET: последние заявки |
-| 17 | `materials_without_active` | подзапрос NOT EXISTS: материалы без активных заявок |
-
-Запросы 10–17 отображаются на `/requests/statistics/`; материалы и сотрудники
-с нулём активных заявок сохраняются в группировках благодаря LEFT JOIN.
-Активные заявки — все, кроме выполненных, отклонённых и отменённых.
-Общие количества разных единиц измерения не складываются: спрос считается
-для каждого материала отдельно. Создание заявки не резервирует остаток,
-как и в ПР3; поиск наличия использует текущий складской остаток.
-
-Вариант «свободные помещения на дату» из учебного Roomly адаптирован к теме:
-материалы подбираются по количеству, а дата используется для поиска созданных
-заявок. Искусственная модель бронирования материалов не вводится.
-
-Проверить все 17 запросов средствами стандартной библиотеки:
-
-```bash
-python -m db.check_queries
+# DELETE: сначала заявка с историей, затем связанные справочники.
+r.delete()
+e.delete()
+m.delete()
 ```
 
-Если установлен SQLite CLI, база открывается командой
-`sqlite3 data/consumables.sqlite`. В VS Code её можно открыть SQLite Viewer.
-Для SQL-параметров в CLI сначала задайте значения (например,
-`.parameter set :quantity 5`), затем выполните соответствующий SELECT.
+`get()` для отсутствующего объекта вызывает `DoesNotExist`, для нескольких —
+`MultipleObjectsReturned`; `filter()` возвращает QuerySet, в том числе пустой.
+`update()` не вызывает методы модели: для смены статуса используйте методы
+заявки, чтобы сохранить историю. Перед `save()` вручную созданного объекта
+можно вызвать `full_clean()`. Удаление используемого материала/сотрудника
+вызывает `ProtectedError`.
 
-Для демонстрации источника данных измените название в SQLite:
+## Фикстуры
 
-```sql
-UPDATE materials SET name = 'Бумага А4 — обновлено' WHERE id = 1;
+Для новой базы после миграций можно загрузить снимок вместо импорта ПР7:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py loaddata fixtures/pr9_initial.json
 ```
 
-После обновления страницы новое название появится на сайте без повторного
-импорта. Сохранённые JSON останутся прежними.
+Сохранение текущих предметных данных:
 
-## Репозиторий
+```powershell
+.\.venv\Scripts\python.exe manage.py dumpdata inventory staff supply_requests --indent 2 --output fixtures/pr9_initial.json
+```
 
-https://github.com/Pyyho/Consumables-ordering-service
+Фикстура содержит предметные записи и связи, без пользователей администратора.
+Загрузка записей с совпадающими PK обновляет их; выполняйте её осознанно.
+Для админ-панели создайте пользователя командой `manage.py createsuperuser`
+и откройте `/admin/`.
+
+## Проверки
+
+```powershell
+.\.venv\Scripts\python.exe manage.py check
+.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run
+.\.venv\Scripts\python.exe manage.py showmigrations
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m flake8 .
+```
+
+Тесты изолированы от рабочей базы через pytest-django. Проверяются прежние
+сценарии, импорт и его повторение/откат, сохранность источника, связи и
+ограничения, CRUD, история отмены, оптимизация связанных запросов, фильтры,
+сортировка, пагинация, статистика и цикл `dumpdata`/`loaddata`.
+
+## Сохранённые предыдущие работы и Git
+
+Ветка ПР7 называется `pr7-sql` (через дефис). Она объединена с `main`;
+ПР9 выполняется в `main`. ПР6 доступна в истории на коммите `38f1426`,
+ПР7 — в ветке `pr7-sql` на `8fed913`. Отправка локальных изменений на GitHub
+выполняется отдельно.
+
+Консольная версия ПР3 запускается `python main.py`, использует пакет `models/`
+с обычными Python-классами и JSON-хранилище. Она сохранена для прежних работ.
+Модули `db/database.py`, `db/queries.py`, `db/import_json.py` и `sql/` относятся
+к SQL-реализации ПР7; проверить её запросы можно командой
+`python -m db.check_queries`. Веб-представления ПР9 их не вызывают.
+
+Репозиторий: <https://github.com/Pyyho/Consumables-ordering-service>.

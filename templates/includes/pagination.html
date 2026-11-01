@@ -1,0 +1,23 @@
+{% if page_obj.paginator.num_pages > 1 %}
+  <nav aria-label="Навигация по страницам заявок" class="mt-4">
+    <ul class="pagination justify-content-center flex-wrap">
+      {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="{% querystring page=page_obj.previous_page_number %}">Назад</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Назад</span></li>
+      {% endif %}
+      {% for number in page_obj.paginator.page_range %}
+        {% if number == page_obj.number %}
+          <li class="page-item active" aria-current="page"><span class="page-link">{{ number }}</span></li>
+        {% else %}
+          <li class="page-item"><a class="page-link" href="{% querystring page=number %}">{{ number }}</a></li>
+        {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="{% querystring page=page_obj.next_page_number %}">Далее</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Далее</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}

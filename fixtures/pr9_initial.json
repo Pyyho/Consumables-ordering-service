@@ -1,0 +1,143 @@
+[
+{
+  "model": "inventory.material",
+  "pk": 1,
+  "fields": {
+    "name": "Бумага А4",
+    "unit": "пачка",
+    "stock": 25
+  }
+},
+{
+  "model": "inventory.material",
+  "pk": 2,
+  "fields": {
+    "name": "Ручка шариковая",
+    "unit": "шт",
+    "stock": 120
+  }
+},
+{
+  "model": "inventory.material",
+  "pk": 3,
+  "fields": {
+    "name": "Картридж для принтера",
+    "unit": "шт",
+    "stock": 4
+  }
+},
+{
+  "model": "inventory.material",
+  "pk": 4,
+  "fields": {
+    "name": "Ножницы",
+    "unit": "шт",
+    "stock": 74
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 1,
+  "fields": {
+    "name": "Иванов И.И.",
+    "email": "ivanov.ii@example.local",
+    "department": "Административный отдел"
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 2,
+  "fields": {
+    "name": "Петрова А.С.",
+    "email": "petrova.as@example.local",
+    "department": "Отдел снабжения"
+  }
+},
+{
+  "model": "staff.employee",
+  "pk": 3,
+  "fields": {
+    "name": "Иванов",
+    "email": "ivanov@example.local",
+    "department": "Не указано"
+  }
+},
+{
+  "model": "supply_requests.supplyrequest",
+  "pk": 1,
+  "fields": {
+    "material": 1,
+    "employee": 1,
+    "quantity": 5,
+    "created": "2026-09-20",
+    "status": "Утверждена"
+  }
+},
+{
+  "model": "supply_requests.supplyrequest",
+  "pk": 2,
+  "fields": {
+    "material": 3,
+    "employee": 2,
+    "quantity": 2,
+    "created": "2026-09-20",
+    "status": "Новая"
+  }
+},
+{
+  "model": "supply_requests.supplyrequest",
+  "pk": 3,
+  "fields": {
+    "material": 4,
+    "employee": 3,
+    "quantity": 12,
+    "created": "2026-09-20",
+    "status": "Новая"
+  }
+},
+{
+  "model": "supply_requests.requesthistory",
+  "pk": 1,
+  "fields": {
+    "request": 1,
+    "position": 0,
+    "status": "Новая"
+  }
+},
+{
+  "model": "supply_requests.requesthistory",
+  "pk": 2,
+  "fields": {
+    "request": 1,
+    "position": 1,
+    "status": "На согласовании"
+  }
+},
+{
+  "model": "supply_requests.requesthistory",
+  "pk": 3,
+  "fields": {
+    "request": 1,
+    "position": 2,
+    "status": "Утверждена"
+  }
+},
+{
+  "model": "supply_requests.requesthistory",
+  "pk": 4,
+  "fields": {
+    "request": 2,
+    "position": 0,
+    "status": "Новая"
+  }
+},
+{
+  "model": "supply_requests.requesthistory",
+  "pk": 5,
+  "fields": {
+    "request": 3,
+    "position": 0,
+    "status": "Новая"
+  }
+}
+]

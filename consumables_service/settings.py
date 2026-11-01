@@ -1,4 +1,4 @@
-"""Настройки шаблонов ПР6 и отдельного SQLite-хранилища ПР7."""
+"""ПР9: модели ORM в db.sqlite3, отдельная база ПР7 — только источник."""
 
 from pathlib import Path
 
@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "homepage",
     "inventory",
+    "staff",
     "supply_requests",
 ]
 

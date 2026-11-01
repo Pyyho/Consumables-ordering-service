@@ -1,34 +1,26 @@
-"""Тесты SQL-представлений ПР7 и сохранённых шаблонов ПР6."""
+"""Тесты ORM-представлений ПР9 и сохранённых сценариев ПР6–ПР7."""
 
-import os
-import sqlite3
-from contextlib import closing
 from types import SimpleNamespace
 
-import django
 import pytest
 from django.contrib.staticfiles import finders
 from django.template.loader import render_to_string
 from django.test import Client, override_settings
-from django.test.utils import setup_test_environment
 from django.urls import resolve, reverse
 
-from db.database import get_connection
 from db.import_json import import_data
+from db.import_sqlite_to_orm import import_source
+from inventory.models import Material as OrmMaterial
 from models import Employee, Material, SupplyRequest
 from storage import save_employees, save_materials, save_requests
+from supply_requests.models import SupplyRequest as OrmRequest
 
 
-os.environ.setdefault(
-    "DJANGO_SETTINGS_MODULE",
-    "consumables_service.settings",
-)
-django.setup()
-setup_test_environment()
+pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def client(tmp_path):
+def client(tmp_path, db):
     """Изолировать веб-тесты от рабочих данных и текущего каталога."""
     data_dir = tmp_path / "data"
     material = Material(1, "Бумага А4", "пачка", 25)
@@ -43,16 +35,9 @@ def client(tmp_path):
     save_requests(data_dir / "requests.json", [supply_request])
     db_path = data_dir / "consumables.sqlite"
     import_data(data_dir, db_path)
+    import_source(db_path, backup=False)
     with override_settings(BASE_DIR=tmp_path, SUPPLY_DB_PATH=db_path):
         yield Client()
-
-
-def change_database(tmp_path, sql, params=()) -> None:
-    """Изменить изолированную базу вместо рабочих JSON-файлов."""
-    db_path = tmp_path / "data" / "consumables.sqlite"
-    with closing(get_connection(db_path)) as c:
-        with c:
-            c.execute(sql, params)
 
 
 def response_text(response) -> str:
@@ -111,7 +96,7 @@ def test_request_detail_and_missing_request(client) -> None:
 
 @pytest.mark.parametrize("path", ["/materials/", "/materials/1/"])
 def test_zero_stock_is_displayed(client, tmp_path, path) -> None:
-    change_database(tmp_path, "UPDATE materials SET stock = 0 WHERE id = 1")
+    OrmMaterial.objects.filter(pk=1).update(stock=0)
     response = client.get(path)
     assert response.status_code == 200
     assert "danger" in response_text(response)
@@ -127,9 +112,9 @@ def test_zero_stock_is_displayed(client, tmp_path, path) -> None:
     ],
 )
 def test_empty_lists(client, tmp_path, path, filename, message) -> None:
-    change_database(tmp_path, "DELETE FROM supply_requests")
+    OrmRequest.objects.all().delete()
     if filename == "materials.json":
-        change_database(tmp_path, "DELETE FROM materials")
+        OrmMaterial.objects.all().delete()
     response = client.get(path)
     assert response.status_code == 200
     assert message in response_text(response)
@@ -140,8 +125,9 @@ def test_empty_lists(client, tmp_path, path, filename, message) -> None:
     ["/materials/", "/materials/1/", "/requests/", "/requests/1/"],
 )
 def test_database_values_are_escaped(client, tmp_path, path) -> None:
-    change_database(tmp_path, "UPDATE materials SET name = ? WHERE id = 1",
-                    ('<script>alert("test")</script>',))
+    OrmMaterial.objects.filter(pk=1).update(
+        name='<script>alert("test")</script>'
+    )
     response = client.get(path)
     content = response_text(response)
     assert response.status_code == 200
@@ -194,12 +180,12 @@ def test_templates_inheritance_and_context(
     if context_key is not None:
         assert response.context[context_key] is not None
     if context_key == "material":
-        assert isinstance(response.context[context_key], sqlite3.Row)
+        assert isinstance(response.context[context_key], OrmMaterial)
     if context_key == "supply_request":
         item = response.context[context_key]
-        assert isinstance(item, sqlite3.Row)
-        assert item["material_name"] == "Бумага А4"
-        assert item["employee_name"] == "Иванов И.И."
+        assert isinstance(item, OrmRequest)
+        assert item.material.name == "Бумага А4"
+        assert item.employee.name == "Иванов И.И."
 
 
 @pytest.mark.parametrize(
@@ -225,9 +211,7 @@ def test_missing_objects_are_handled_in_templates(
 ])
 @pytest.mark.parametrize("path", ["/requests/", "/requests/1/"])
 def test_shared_status_template(client, tmp_path, status, path) -> None:
-    change_database(tmp_path,
-                    "UPDATE supply_requests SET status = ? WHERE id = 1",
-                    (status,))
+    OrmRequest.objects.filter(pk=1).update(status=status)
     response = client.get(path)
     names = {template.name for template in response.templates}
     assert "supply_requests/includes/request_status.html" in names
@@ -268,11 +252,10 @@ def test_text_is_not_accepted_by_int_routes(client, path) -> None:
 def test_pages_use_database_not_later_json_changes(client, tmp_path) -> None:
     save_materials(tmp_path / "data" / "materials.json",
                    [Material(1, "Только в JSON", "шт", 1)])
-    change_database(tmp_path, "UPDATE materials SET name = ? WHERE id = 1",
-                    ("Название из SQLite",))
+    OrmMaterial.objects.filter(pk=1).update(name="Название из ORM")
     for path in ("/materials/", "/materials/1/", "/requests/", "/requests/1/"):
         content = response_text(client.get(path))
-        assert "Название из SQLite" in content
+        assert "Название из ORM" in content
         assert "Только в JSON" not in content
 
 
@@ -285,14 +268,14 @@ def test_material_search_rejects_invalid_quantity(client, quantity) -> None:
 def test_available_materials_get_search(client) -> None:
     assert client.get("/materials/available/").context["searched"] is False
     found = client.get("/materials/available/", {"quantity": "25"})
-    assert [row["id"] for row in found.context["materials"]] == [1]
+    assert [row.pk for row in found.context["materials"]] == [1]
     missing = client.get("/materials/available/", {"quantity": "26"})
     assert len(missing.context["materials"]) == 0
 
 
 def test_requests_by_date(client) -> None:
     found = client.get("/requests/search/", {"date": "2026-09-20"})
-    assert [row["id"] for row in found.context["supply_requests"]] == [1]
+    assert [row.pk for row in found.context["supply_requests"]] == [1]
     empty = client.get("/requests/search/", {"date": "2026-09-21"})
     assert "На выбранную дату заявок нет" in response_text(empty)
     for value in ("2026-02-30", "20260920", "' OR 1=1 --"):
@@ -302,21 +285,19 @@ def test_requests_by_date(client) -> None:
 
 def test_active_requests_and_employees(client, tmp_path) -> None:
     assert len(client.get("/requests/active/").context["supply_requests"]) == 1
-    change_database(tmp_path,
-                    "UPDATE supply_requests SET status = 'Отменена'")
+    OrmRequest.objects.update(status="Отменена")
     assert len(client.get("/requests/active/").context["supply_requests"]) == 0
     assert len(client.get("/requests/").context["supply_requests"]) == 1
     assert "Иванов И.И." in response_text(client.get("/requests/employees/"))
 
 
 def test_statistics_keep_zero_request_material(client, tmp_path) -> None:
-    change_database(tmp_path,
-                    "INSERT INTO materials VALUES (2, 'Маркер', 'шт', 0)")
+    OrmMaterial.objects.create(pk=2, name="Маркер", unit="шт", stock=0)
     response = client.get("/requests/statistics/")
     assert response.status_code == 200
     assert response.context["material_summary"]["total"] == 2
     assert response.context["request_summary"]["active"] == 1
-    rows = {row["id"]: row for row in response.context["material_statistics"]}
-    assert rows[2]["requests_count"] == 0
-    assert rows[2]["requested_quantity"] == 0
+    rows = {row.pk: row for row in response.context["material_statistics"]}
+    assert rows[2].requests_count == 0
+    assert rows[2].requested_quantity == 0
     assert "Маркер" in response_text(response)

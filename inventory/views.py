@@ -1,44 +1,30 @@
-"""Каталог и поиск материалов средствами параметризованных SQL-запросов."""
+"""Каталог и подбор материалов средствами Django ORM."""
 
-from django.conf import settings
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.http import Http404, HttpRequest, HttpResponse
+from django.shortcuts import get_object_or_404, render
 
-from db.queries import fetch_all
+from .models import Material
 
 
 def materials(request: HttpRequest) -> HttpResponse:
-    """Получить список материалов из SQLite."""
-    context = {"materials": fetch_all(
-        "materials_list", db_path=settings.SUPPLY_DB_PATH
-    )}
+    context = {"materials": Material.objects.order_by("name", "pk")}
     return render(request, "inventory/material_list.html", context)
 
 
-def material_detail(
-    request: HttpRequest,
-    material_id: int,
-) -> HttpResponse:
-    """Найти материал в SQLite и сохранить шаблонную обработку 404."""
-    rows = fetch_all("material_detail", {"id": material_id},
-                     db_path=settings.SUPPLY_DB_PATH)
-    material = rows[0] if rows else None
-    context = {
-        "material": material,
-        "available": material["stock"] > 0 if material is not None else False,
-    }
-    return render(
-        request,
-        "inventory/material_detail.html",
-        context,
-        status=404 if material is None else 200,
-    )
+def material_detail(request: HttpRequest, material_id: int) -> HttpResponse:
+    try:
+        material = get_object_or_404(Material, pk=material_id)
+    except Http404:
+        return render(request, "inventory/material_detail.html",
+                      {"material": None}, status=404)
+    context = {"material": material, "available": material.has_stock(1)}
+    return render(request, "inventory/material_detail.html", context)
 
 
 def available_materials(request: HttpRequest) -> HttpResponse:
-    """Найти материалы с остатком не меньше требуемого количества."""
-    raw_quantity = request.GET.get("quantity", "")
-    context = {"quantity": raw_quantity, "materials": [],
+    """Подбор по текущему остатку сохраняет правила ПР7, не вводит бронь."""
+    raw_quantity = request.GET.get("quantity", "").strip()
+    context = {"quantity": raw_quantity, "materials": Material.objects.none(),
                "searched": bool(raw_quantity), "error": ""}
     if raw_quantity:
         try:
@@ -48,9 +34,8 @@ def available_materials(request: HttpRequest) -> HttpResponse:
         except ValueError:
             context["error"] = "Введите целое количество от 1 до 2147483647."
         else:
-            context["materials"] = fetch_all(
-                "materials_available", {"quantity": quantity},
-                db_path=settings.SUPPLY_DB_PATH,
-            )
+            context["materials"] = Material.objects.filter(
+                stock__gte=quantity
+            ).order_by("stock", "name", "pk")
     return render(request, "inventory/available.html", context,
                   status=400 if context["error"] else 200)

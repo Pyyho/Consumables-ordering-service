@@ -19,7 +19,7 @@
   <p>Учитываются заявки, которые ещё обрабатываются.</p>
   <div class="table-responsive requests-table mb-4">
     <table class="table mb-0">
-      <thead><tr><th scope="col">Материал</th><th scope="col">Активных заявок</th><th scope="col">Запрошено</th><th scope="col">Остаток</th></tr></thead>
+      <thead><tr><th scope="col">Материал</th><th scope="col">Активных заявок</th><th scope="col">Запрошено</th><th scope="col">Остаток</th><th scope="col">Среднее / минимум / максимум в заявке</th></tr></thead>
       <tbody>
         {% for item in material_statistics %}
           <tr>
@@ -27,9 +27,10 @@
             <td>{{ item.requests_count }}</td>
             <td>{{ item.requested_quantity }} {{ item.unit }}</td>
             <td>{{ item.stock }} {{ item.unit }}</td>
+            <td>{{ item.average_quantity|floatformat:2|default:"—" }} / {{ item.minimum_quantity|default_if_none:"—" }} / {{ item.maximum_quantity|default_if_none:"—" }} {{ item.unit }}</td>
           </tr>
         {% empty %}
-          <tr><td colspan="4">Материалов пока нет.</td></tr>
+          <tr><td colspan="5">Материалов пока нет.</td></tr>
         {% endfor %}
       </tbody>
     </table>
