@@ -2,3 +2,5 @@ flake8>=7.0
 pytest>=8.0
 Django==5.2.*
 pytest-django>=4.9
+django-debug-toolbar==6.3.0
+transliterate==1.10.2

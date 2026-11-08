@@ -15,4 +15,5 @@ urlpatterns = [
         views.material_detail,
         name="material_detail",
     ),
+    path("<slug:slug>/", views.material_detail, name="material_by_slug"),
 ]

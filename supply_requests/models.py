@@ -9,10 +9,20 @@ from django.db.models import Max, Q
 from models.requests import FINAL_STATUSES, VALID_STATUSES
 
 
-STATUS_CHOICES = [(status, status) for status in VALID_STATUSES]
+class RequestStatus(models.TextChoices):
+    NEW = "Новая", "Новая"
+    REVIEW = "На согласовании", "На согласовании"
+    APPROVED = "Утверждена", "Утверждена"
+    PURCHASING = "В закупке", "В закупке"
+    COMPLETED = "Выполнена", "Выполнена"
+    REJECTED = "Отклонена", "Отклонена"
+    CANCELLED = "Отменена", "Отменена"
 
 
 class SupplyRequestQuerySet(models.QuerySet):
+    def with_details(self):
+        return self.select_related("material", "employee")
+
     def active(self):
         return self.exclude(status__in=FINAL_STATUSES)
 
@@ -31,8 +41,10 @@ class SupplyRequest(models.Model):
     )
     created = models.DateField("Дата создания", default=date.today,
                                db_index=True)
-    status = models.CharField("Статус", max_length=32, choices=STATUS_CHOICES,
-                              default="Новая")
+    status = models.CharField(
+        "Статус", max_length=32, choices=RequestStatus.choices,
+        default=RequestStatus.NEW,
+    )
 
     objects = SupplyRequestQuerySet.as_manager()
 
@@ -49,7 +61,7 @@ class SupplyRequest(models.Model):
 
     @property
     def is_cancelled(self) -> bool:
-        return self.status == "Отменена"
+        return self.status == RequestStatus.CANCELLED
 
     @property
     def material_name(self) -> str:
@@ -108,17 +120,21 @@ class SupplyRequest(models.Model):
         self._set_status(new_status)
 
     def cancel(self) -> None:
-        self._set_status("Отменена", require_open=True)
+        self._set_status(RequestStatus.CANCELLED, require_open=True)
 
     def __str__(self) -> str:
         return f"Заявка №{self.pk}: {self.material} — {self.status}"
 
 
 class RequestHistory(models.Model):
-    request = models.ForeignKey(SupplyRequest, on_delete=models.CASCADE,
-                                related_name="status_events")
+    request = models.ForeignKey(
+        SupplyRequest, on_delete=models.CASCADE,
+        related_name="status_events", verbose_name="Заявка",
+    )
     position = models.PositiveIntegerField("Порядок события")
-    status = models.CharField("Статус", max_length=32, choices=STATUS_CHOICES)
+    status = models.CharField(
+        "Статус", max_length=32, choices=RequestStatus.choices
+    )
 
     class Meta:
         ordering = ["position", "pk"]

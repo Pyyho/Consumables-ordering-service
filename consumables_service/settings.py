@@ -1,5 +1,6 @@
 """ПР9: модели ORM в db.sqlite3, отдельная база ПР7 — только источник."""
 
+import os
 from pathlib import Path
 
 
@@ -8,6 +9,7 @@ SUPPLY_DB_PATH = BASE_DIR / "data" / "consumables.sqlite"
 
 SECRET_KEY = "pr5-local-development-key"
 DEBUG = True
+ENABLE_DEBUG_TOOLBAR = DEBUG and os.environ.get("DJANGO_DEBUG_TOOLBAR") == "1"
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", "testserver"]
 
 INSTALLED_APPS = [
@@ -69,3 +71,9 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+if ENABLE_DEBUG_TOOLBAR:
+    INSTALLED_APPS += ["debug_toolbar"]
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+    INTERNAL_IPS = ["127.0.0.1", "::1"]
+    DEBUG_TOOLBAR_CONFIG = {"SHOW_COLLAPSED": True}

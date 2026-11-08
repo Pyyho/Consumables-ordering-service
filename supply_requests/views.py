@@ -9,13 +9,13 @@ from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
 
 from inventory.models import Material
-from models.requests import FINAL_STATUSES, VALID_STATUSES
+from models.requests import FINAL_STATUSES
 from staff.models import Employee
 
-from .models import SupplyRequest
+from .models import RequestStatus, SupplyRequest
 
 
-ACTIVE_STATUSES = [s for s in VALID_STATUSES if s not in FINAL_STATUSES]
+ACTIVE_STATUSES = [s for s in RequestStatus.values if s not in FINAL_STATUSES]
 SORT_FIELDS = {"date": "created", "newest": "-created",
                "material": "material__name", "employee": "employee__name",
                "status": "status"}
@@ -29,7 +29,7 @@ def _parse_date(value: str) -> date:
 
 
 def _request_list(request, *, active_only=False):
-    rows = SupplyRequest.objects.select_related("material", "employee")
+    rows = SupplyRequest.objects.with_details()
     if active_only:
         rows = rows.active()
     selected_date = request.GET.get("date", "").strip()
@@ -58,7 +58,7 @@ def _request_list(request, *, active_only=False):
             else:
                 rows = rows.filter(**{name: value})
     if selected_status:
-        if selected_status not in VALID_STATUSES:
+        if selected_status not in RequestStatus.values:
             errors.append("Выберите допустимый статус.")
         else:
             rows = rows.filter(status=selected_status)
@@ -77,9 +77,9 @@ def _request_list(request, *, active_only=False):
         "selected_material": selected_material,
         "selected_employee": selected_employee,
         "selected_status": selected_status, "q": query, "sort": sort,
-        "materials": Material.objects.order_by("name", "pk"),
-        "employees": Employee.objects.order_by("name", "pk"),
-        "statuses": VALID_STATUSES, "error": " ".join(errors),
+        "materials": Material.objects.only("name").order_by("name", "pk"),
+        "employees": Employee.objects.only("name").order_by("name", "pk"),
+        "statuses": RequestStatus.values, "error": " ".join(errors),
     }
     return render(request, "supply_requests/request_list.html", context,
                   status=400 if errors else 200)
@@ -96,7 +96,7 @@ def active_requests(request: HttpRequest) -> HttpResponse:
 def request_detail(request: HttpRequest, request_id: int) -> HttpResponse:
     try:
         item = get_object_or_404(
-            SupplyRequest.objects.select_related("material", "employee"),
+            SupplyRequest.objects.with_details(),
             pk=request_id,
         )
     except Http404:
@@ -117,9 +117,10 @@ def requests_by_date(request: HttpRequest) -> HttpResponse:
         except ValueError:
             context["error"] = "Введите дату в формате ГГГГ-ММ-ДД."
         else:
-            context["supply_requests"] = SupplyRequest.objects.filter(
-                created=parsed
-            ).select_related("material", "employee").order_by("pk")
+            context["supply_requests"] = (
+                SupplyRequest.objects.with_details()
+                .filter(created=parsed).order_by("pk")
+            )
     return render(request, "supply_requests/search.html", context,
                   status=400 if context["error"] else 200)
 
@@ -153,7 +154,7 @@ def statistics(request: HttpRequest) -> HttpResponse:
         "request_summary": SupplyRequest.objects.aggregate(
             total=Count("pk"),
             active=Count("pk", filter=Q(status__in=ACTIVE_STATUSES)),
-            completed=Count("pk", filter=Q(status="Выполнена"))),
+            completed=Count("pk", filter=Q(status=RequestStatus.COMPLETED))),
         "material_statistics": material_stats,
         "employee_statistics": employee_stats,
         "popular_materials": material_stats.filter(requests_count__gt=1),
@@ -163,9 +164,9 @@ def statistics(request: HttpRequest) -> HttpResponse:
             .filter(requests_count__gt=0)
             .order_by("-requests_count", "department")
         ),
-        "recent_requests": SupplyRequest.objects.select_related(
-            "employee", "material"
-        ).order_by("-created", "-pk")[:5],
+        "recent_requests": SupplyRequest.objects.with_details().order_by(
+            "-created", "-pk"
+        )[:5],
         "without_active": Material.objects.exclude(
             pk__in=occupied_ids
         ).order_by("name", "pk"),

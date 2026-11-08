@@ -11,9 +11,14 @@ def materials(request: HttpRequest) -> HttpResponse:
     return render(request, "inventory/material_list.html", context)
 
 
-def material_detail(request: HttpRequest, material_id: int) -> HttpResponse:
+def material_detail(
+    request: HttpRequest,
+    material_id: int | None = None,
+    slug: str | None = None,
+) -> HttpResponse:
     try:
-        material = get_object_or_404(Material, pk=material_id)
+        lookup = {"slug": slug} if slug is not None else {"pk": material_id}
+        material = get_object_or_404(Material, **lookup)
     except Http404:
         return render(request, "inventory/material_detail.html",
                       {"material": None}, status=404)
