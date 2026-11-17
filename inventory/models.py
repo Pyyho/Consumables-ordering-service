@@ -16,6 +16,9 @@ class Material(models.Model):
         "Остаток", default=0,
         help_text="Количество в единицах этого материала.",
     )
+    image = models.ImageField(
+        "Изображение", upload_to="materials/", blank=True,
+    )
     slug = models.SlugField(
         "Адрес", max_length=100, unique=True, editable=False,
     )

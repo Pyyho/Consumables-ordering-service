@@ -11,6 +11,11 @@
     <span class="count-label">Заявок: {{ page_obj.paginator.count }}</span>
   </div>
   <div class="hero-actions mb-3">
+    {% if user.is_staff and perms.supply_requests.add_supplyrequest %}
+      <a href="{% url 'supply_requests:create' %}" class="btn btn-primary">Новая заявка</a>
+    {% elif not user.is_authenticated %}
+      <a href="{% url 'admin:login' %}?next={% url 'supply_requests:requests' %}" class="btn btn-outline-primary">Войти для работы с заявками</a>
+    {% endif %}
     <a href="{% url 'supply_requests:requests' %}" class="btn btn-outline-primary">Все заявки</a>
     <a href="{% url 'supply_requests:active' %}" class="btn btn-outline-primary">Активные заявки</a>
     <a href="{% url 'supply_requests:search' %}" class="btn btn-outline-primary">Поиск по дате</a>
@@ -18,51 +23,11 @@
   </div>
   <form method="get" class="card detail-card mb-4">
     <div class="card-body row g-3 align-items-end">
-      <div class="col-md-4">
-        <label for="q" class="form-label">Поиск материала или сотрудника</label>
-        <input id="q" name="q" value="{{ q }}" class="form-control">
-      </div>
-      <div class="col-md-4">
-        <label for="date" class="form-label">Дата создания</label>
-        <input type="date" id="date" name="date" value="{{ selected_date }}" class="form-control">
-      </div>
-      <div class="col-md-4">
-        <label for="material" class="form-label">Материал</label>
-        <select id="material" name="material" class="form-select">
-          <option value="">Все материалы</option>
-          {% for material in materials %}
-            <option value="{{ material.pk }}"{% if selected_material == material.pk|stringformat:"s" %} selected{% endif %}>{{ material.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-4">
-        <label for="employee" class="form-label">Сотрудник</label>
-        <select id="employee" name="employee" class="form-select">
-          <option value="">Все сотрудники</option>
-          {% for employee in employees %}
-            <option value="{{ employee.pk }}"{% if selected_employee == employee.pk|stringformat:"s" %} selected{% endif %}>{{ employee.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-4">
-        <label for="status" class="form-label">Статус</label>
-        <select id="status" name="status" class="form-select">
-          <option value="">Все статусы</option>
-          {% for status in statuses %}
-            <option value="{{ status }}"{% if selected_status == status %} selected{% endif %}>{{ status }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-4">
-        <label for="sort" class="form-label">Сортировать по</label>
-        <select id="sort" name="sort" class="form-select">
-          <option value="date"{% if sort == 'date' %} selected{% endif %}>Дате</option>
-          <option value="newest"{% if sort == 'newest' %} selected{% endif %}>Сначала новые</option>
-          <option value="material"{% if sort == 'material' %} selected{% endif %}>Материалу</option>
-          <option value="employee"{% if sort == 'employee' %} selected{% endif %}>Сотруднику</option>
-          <option value="status"{% if sort == 'status' %} selected{% endif %}>Статусу</option>
-        </select>
-      </div>
+      {% for field in filter_form %}
+        <div class="col-md-4">
+          {% include "includes/form_field.html" with field=field only %}
+        </div>
+      {% endfor %}
       <div class="col-12 hero-actions">
         <button type="submit" class="btn btn-primary">Применить</button>
         {% if active_only %}
@@ -73,7 +38,6 @@
       </div>
     </div>
   </form>
-  {% if error %}<p class="alert alert-danger" role="alert">{{ error }}</p>{% endif %}
   <div class="table-responsive requests-table">
     <table class="table table-hover align-middle mb-0">
       <caption class="visually-hidden">Заявки сотрудников на расходные материалы</caption>

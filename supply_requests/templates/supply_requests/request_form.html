@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{% if editing %}Редактирование заявки{% else %}Новая заявка{% endif %}{% endblock %}
+{% block content %}
+  <h1>{% if editing %}Редактирование заявки №{{ supply_request.pk }}{% else %}Новая заявка{% endif %}</h1>
+  <form method="post" class="card detail-card mt-3">
+    <div class="card-body">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      {% for field in form %}
+        <div class="mb-3">{% include "includes/form_field.html" with field=field only %}</div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+      {% if editing %}
+        <a href="{% url 'supply_requests:request_detail' supply_request.pk %}" class="btn btn-outline-secondary">К заявке</a>
+      {% else %}
+        <a href="{% url 'supply_requests:requests' %}" class="btn btn-outline-secondary">К списку</a>
+      {% endif %}
+    </div>
+  </form>
+{% endblock %}

@@ -15,5 +15,6 @@ urlpatterns = [
         views.material_detail,
         name="material_detail",
     ),
+    path("<int:material_id>/image/", views.material_image, name="image"),
     path("<slug:slug>/", views.material_detail, name="material_by_slug"),
 ]

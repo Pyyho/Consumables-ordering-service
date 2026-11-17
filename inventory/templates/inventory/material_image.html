@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Фото материала{% endblock %}
+{% block content %}
+  <h1>Фото материала {{ material.name }}</h1>
+  <form method="post" enctype="multipart/form-data" class="card detail-card mt-3">
+    <div class="card-body">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div class="mb-3">{% include "includes/form_field.html" with field=form.image only %}</div>
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+      <a href="{{ material.get_absolute_url }}" class="btn btn-outline-secondary">К материалу</a>
+    </div>
+  </form>
+{% endblock %}

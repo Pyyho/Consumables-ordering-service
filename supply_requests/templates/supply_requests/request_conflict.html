@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Заявку нельзя изменить{% endblock %}
+{% block content %}
+  <h1>Заявку №{{ supply_request.pk }} нельзя изменить</h1>
+  <p>Текущий статус заявки: {{ supply_request.get_status_display }}.</p>
+  <a href="{% url 'supply_requests:request_detail' supply_request.pk %}" class="btn btn-outline-secondary">К заявке</a>
+{% endblock %}

@@ -22,6 +22,15 @@
           <dt class="col-sm-4">Дата создания</dt>
           <dd class="col-sm-8">{{ supply_request.created_display }}</dd>
         </dl>
+        {% if user.is_staff and perms.supply_requests.change_supplyrequest and supply_request.is_open %}
+          <div class="hero-actions">
+            <a href="{% url 'supply_requests:edit' supply_request.pk %}" class="btn btn-outline-primary">Редактировать</a>
+            <form method="post" action="{% url 'supply_requests:cancel' supply_request.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-danger">Отменить заявку</button>
+            </form>
+          </div>
+        {% endif %}
         <h2 class="h5 mt-4">История статусов</h2>
         <ol class="status-history">
           {% for item in history %}

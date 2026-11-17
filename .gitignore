@@ -7,3 +7,5 @@ __pycache__/
 tmp/
 db.sqlite3
 data/backups/
+
+/media/

@@ -60,6 +60,10 @@ class SupplyRequest(models.Model):
         ]
 
     @property
+    def is_open(self) -> bool:
+        return self.status not in FINAL_STATUSES
+
+    @property
     def is_cancelled(self) -> bool:
         return self.status == RequestStatus.CANCELLED
 

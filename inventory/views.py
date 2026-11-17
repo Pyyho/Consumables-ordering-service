@@ -1,8 +1,12 @@
 """Каталог и подбор материалов средствами Django ORM."""
 
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import permission_required
 from django.http import Http404, HttpRequest, HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_http_methods
 
+from .forms import MaterialImageForm
 from .models import Material
 
 
@@ -44,3 +48,21 @@ def available_materials(request: HttpRequest) -> HttpResponse:
             ).order_by("stock", "name", "pk")
     return render(request, "inventory/available.html", context,
                   status=400 if context["error"] else 200)
+
+
+@staff_member_required
+@permission_required("inventory.change_material", raise_exception=True)
+@require_http_methods(["GET", "POST"])
+def material_image(request, material_id):
+    material = get_object_or_404(Material, pk=material_id)
+    if request.method == "POST":
+        form = MaterialImageForm(request.POST, request.FILES,
+                                 instance=material)
+        if form.is_valid():
+            material = form.save(commit=False)
+            material.save(update_fields=["image"])
+            return redirect(material)
+    else:
+        form = MaterialImageForm(instance=material)
+    return render(request, "inventory/material_image.html",
+                  {"form": form, "material": material})
